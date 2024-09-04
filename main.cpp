@@ -5,12 +5,13 @@
 #include <fstream>
 #include <format>
 /*
-* TODO: show mouse coordinates and intersections with curves
+* TODO: show mouse intersections with curves
 */
 sol::state lua;
 std::vector<std::function<double(double)>> f;
 std::vector<sf::VertexArray> curve;
 sf::VertexArray pts(sf::Lines, 8*8);
+sf::VertexArray mouseAxis(sf::Lines, 4);
 sf::Text text;
 sf::Text mousePos;
 float wwidth = 1600, wheight = 900;
@@ -105,6 +106,8 @@ int main(int argc, char* argv[]){
     mousePos = sf::Text("", font, 20);
     mousePos.setFillColor(sf::Color::Red);
     mousePos.setPosition(0, 0);
+    mouseAxis[0].position.x = wwidth / 2;
+    mouseAxis[2].position.y = wheight / 2;
     reload();
     redraw();
     sf::VertexArray axis(sf::Lines, 4);
@@ -144,10 +147,16 @@ int main(int argc, char* argv[]){
                 } else if(key == sf::Keyboard::Q){
                     window.close();
                 }
-            } else if(event.type == sf::Event::MouseMoved){
+            }else if(event.type == sf::Event::MouseMoved){
                 int mx = event.mouseMove.x, my = event.mouseMove.y;
-                mousePos.setPosition(mx+10, my-25);
+                mousePos.setPosition(mx+10, my-25);//TODO: Maybe not at the cursor but at some corner of the screen
                 mousePos.setString(std::format("{:.3} {:.3}", (mx - wwidth / 2)/wwidth*zoomX*2, (my - wheight / 2)/wheight*zoomY*-2));
+                mouseAxis[0].position.y = my;
+                mouseAxis[1].position.y = my;
+                mouseAxis[1].position.x = mx;
+                mouseAxis[2].position.x = mx;
+                mouseAxis[3].position.x = mx;
+                mouseAxis[3].position.y = my;
             }
         }
 
@@ -158,9 +167,8 @@ int main(int argc, char* argv[]){
             window.draw(curv);
         }
         window.draw(pts);
+        window.draw(mouseAxis);
         window.draw(mousePos);
-        //draw mouse position text "{x} {y}"
-        //draw axis lines to middle
         window.display();
     }
 
