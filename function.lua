@@ -1,1 +1,2 @@
-x<0 and 5
+x
+math.sin(x)

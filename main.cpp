@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <fstream>
+#include <format>
 /*
 * TODO: show mouse coordinates and intersections with curves
 */
@@ -11,9 +12,12 @@ std::vector<std::function<double(double)>> f;
 std::vector<sf::VertexArray> curve;
 sf::VertexArray pts(sf::Lines, 8*8);
 sf::Text text;
-size_t resolution = 200;
-float zoomY = 0.2f;
+sf::Text mousePos;
+float wwidth = 1600, wheight = 900;
+size_t resolution = 200;//number of curve vertex points
+float zoomY = 5.F;
 float zoomX = 10.f;
+int mx = 800, my = 450;
 
 double nullf(double x){ return x; }
 
@@ -50,16 +54,16 @@ void reload(){
 }
 
 void appendX_Nth(float n){
-    pts.append(sf::Vertex(sf::Vector2f(1600 / 2.f + n*(800 / zoomX), (900 / 2.f) + 10), sf::Color::White));
-    pts.append(sf::Vertex(sf::Vector2f(1600 / 2.f + n*(800 / zoomX), (900 / 2.f) - 10), sf::Color::White));
-    pts.append(sf::Vertex(sf::Vector2f(1600 / 2.f - n*(800 / zoomX), (900 / 2.f) + 10), sf::Color::White));
-    pts.append(sf::Vertex(sf::Vector2f(1600 / 2.f - n*(800 / zoomX), (900 / 2.f) - 10), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f(wwidth / 2.f + n*(800 / zoomX), (wheight / 2.f) + 10), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f(wwidth / 2.f + n*(800 / zoomX), (wheight / 2.f) - 10), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f(wwidth / 2.f - n*(800 / zoomX), (wheight / 2.f) + 10), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f(wwidth / 2.f - n*(800 / zoomX), (wheight / 2.f) - 10), sf::Color::White));
 }
 void appendY_Nth(float n){
-    pts.append(sf::Vertex(sf::Vector2f((1600 / 2.f) + 10, 900 / 2.f + n*(450 * zoomY)), sf::Color::White));
-    pts.append(sf::Vertex(sf::Vector2f((1600 / 2.f) - 10, 900 / 2.f + n*(450 * zoomY)), sf::Color::White));
-    pts.append(sf::Vertex(sf::Vector2f((1600 / 2.f) + 10, 900 / 2.f - n*(450 * zoomY)), sf::Color::White));
-    pts.append(sf::Vertex(sf::Vector2f((1600 / 2.f) - 10, 900 / 2.f - n*(450 * zoomY)), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f((wwidth / 2.f) + 10, wheight / 2.f + n*(450 / zoomY)), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f((wwidth / 2.f) - 10, wheight / 2.f + n*(450 / zoomY)), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f((wwidth / 2.f) + 10, wheight / 2.f - n*(450 / zoomY)), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f((wwidth / 2.f) - 10, wheight / 2.f - n*(450 / zoomY)), sf::Color::White));
 }
 
 void redraw(){
@@ -69,12 +73,12 @@ void redraw(){
         for(size_t x = 0; x <= resolution; x++){
             double norm = (double) x / resolution;      //   0..1
             double real = (norm - 0.5) * 2;             //  -1..1
-            double r_result = fun(real * zoomX) * zoomY;      //f(-1..1), scaled by zoomX => -1..1, scaled by zoomY
+            double r_result = fun(real * zoomX) / zoomY;      //f(-1..1), scaled by zoomX => -1..1, scaled by zoomY
             double n_result = (r_result + 1) / 2;       //f(-1..1) =>  0..1
 
             curve.back().append(sf::Vertex(sf::Vector2f(
-                (float) x / resolution * 1600,
-                900 - (float) n_result * 900),
+                (float) x / resolution * wwidth,
+                wheight - (float) n_result * wheight),
                 sf::Color::Green));
         }
     }
@@ -82,7 +86,7 @@ void redraw(){
     for(float i = 1; i <= zoomX; i++){
         appendX_Nth(i);
     }
-    for(float i = 1; i <= 1/zoomY; i++){
+    for(float i = 1; i <= zoomY; i++){
         appendY_Nth(i);
     }
 }
@@ -94,18 +98,20 @@ int main(int argc, char* argv[]){
         std::cerr << "Could not load font 'arial.ttf'" << std::endl;
         exit(-2);
     }
-    sf::RenderWindow window(sf::VideoMode(1600, 900), "Plotter");
+    sf::RenderWindow window(sf::VideoMode(wwidth, wheight), "Plotter");
     text = sf::Text("",font,20);
     text.setFillColor(sf::Color::White);
     text.setPosition(0,0);
+    mousePos = sf::Text("", font, 20);
+    mousePos.setFillColor(sf::Color::Red);
+    mousePos.setPosition(0, 0);
     reload();
     redraw();
-    sf::VertexArray triangle(sf::LineStrip, resolution);
     sf::VertexArray axis(sf::Lines, 4);
-    axis.append(sf::Vertex(sf::Vector2f(0, 900/2), sf::Color::White));
-    axis.append(sf::Vertex(sf::Vector2f(1600, 900 / 2), sf::Color::White));
-    axis.append(sf::Vertex(sf::Vector2f(1600/2, 0), sf::Color::White));
-    axis.append(sf::Vertex(sf::Vector2f(1600/2, 900), sf::Color::White));
+    axis.append(sf::Vertex(sf::Vector2f(0, wheight/2), sf::Color::White));
+    axis.append(sf::Vertex(sf::Vector2f(wwidth, wheight / 2), sf::Color::White));
+    axis.append(sf::Vertex(sf::Vector2f(wwidth/2, 0), sf::Color::White));
+    axis.append(sf::Vertex(sf::Vector2f(wwidth/2, wheight), sf::Color::White));
 
     while(window.isOpen()){
         sf::Event event;
@@ -124,10 +130,10 @@ int main(int argc, char* argv[]){
                     zoomX /= 2;
                     redraw();
                 }else if(key == sf::Keyboard::Up){
-                    zoomY *= 2;
+                    zoomY /= 2;
                     redraw();
                 }else if(key == sf::Keyboard::Down){
-                    zoomY /= 2;
+                    zoomY *= 2;
                     redraw();
                 }else if(key == sf::Keyboard::Add){
                     resolution *= 2;
@@ -138,6 +144,10 @@ int main(int argc, char* argv[]){
                 } else if(key == sf::Keyboard::Q){
                     window.close();
                 }
+            } else if(event.type == sf::Event::MouseMoved){
+                int mx = event.mouseMove.x, my = event.mouseMove.y;
+                mousePos.setPosition(mx+10, my-25);
+                mousePos.setString(std::format("{:.3} {:.3}", (mx - wwidth / 2)/wwidth*zoomX*2, (my - wheight / 2)/wheight*zoomY*-2));
             }
         }
 
@@ -148,6 +158,9 @@ int main(int argc, char* argv[]){
             window.draw(curv);
         }
         window.draw(pts);
+        window.draw(mousePos);
+        //draw mouse position text "{x} {y}"
+        //draw axis lines to middle
         window.display();
     }
 
