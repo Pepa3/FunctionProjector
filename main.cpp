@@ -94,6 +94,7 @@ void redraw(){
 
 int main(int argc, char* argv[]){
     lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::math);
+    lua.script("sin,cos,tg,pi = math.sin, math.cos, math.tan, math.pi");
     sf::Font font;
     if(!font.loadFromFile("arial.ttf")){
         std::cerr << "Could not load font 'arial.ttf'" << std::endl;

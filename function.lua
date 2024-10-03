@@ -1,2 +1,2 @@
 x
-math.sin(x)
+sin(x)
