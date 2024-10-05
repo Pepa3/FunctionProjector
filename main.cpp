@@ -3,9 +3,9 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <fstream>
-#include <format>
 /*
 * TODO: show mouse intersections with curves
+* TODO: resizing window
 */
 sol::state lua;
 std::vector<std::function<double(double)>> f;
@@ -151,7 +151,10 @@ int main(int argc, char* argv[]){
             }else if(event.type == sf::Event::MouseMoved){
                 int mx = event.mouseMove.x, my = event.mouseMove.y;
                 mousePos.setPosition(mx+10, my-25);//TODO: Maybe not at the cursor but at some corner of the screen
-                mousePos.setString(std::format("{:.3} {:.3}", (mx - wwidth / 2)/wwidth*zoomX*2, (my - wheight / 2)/wheight*zoomY*-2));
+                std::stringstream str;
+		str << (mx - wwidth / 2)/wwidth*zoomX*2 << " " << (my - wheight / 2)/wheight*zoomY*-2;
+		mousePos.setString(str.str());
+		//mousePos.setString(std::format("{:.3} {:.3}", (mx - wwidth / 2)/wwidth*zoomX*2, (my - wheight / 2)/wheight*zoomY*-2));
                 mouseAxis[0].position.y = my;
                 mouseAxis[1].position.y = my;
                 mouseAxis[1].position.x = mx;
