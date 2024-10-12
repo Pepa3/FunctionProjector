@@ -5,19 +5,19 @@
 #include <fstream>
 /*
 * TODO: show mouse intersections with curves
-* TODO: resizing window
 */
 sol::state lua;
 std::vector<std::function<double(double)>> f;
 std::vector<sf::VertexArray> curve;
 sf::VertexArray pts(sf::Lines, 8*8);
 sf::VertexArray mouseAxis(sf::Lines, 4);
+sf::VertexArray axis(sf::Lines, 4);
 sf::Text text;
 sf::Text mousePos;
-float wwidth = 1600, wheight = 900;
+float wwidth = 1000, wheight = 600;
 size_t resolution = 200;//number of curve vertex points
-float zoomY = 5.F;
-float zoomX = 10.f;
+float zoomY = 3.f;
+float zoomX = 6.f;
 int mx = 800, my = 450;
 
 double nullf(double x){ return x; }
@@ -55,16 +55,16 @@ void reload(){
 }
 
 void appendX_Nth(float n){
-    pts.append(sf::Vertex(sf::Vector2f(wwidth / 2.f + n*(800 / zoomX), (wheight / 2.f) + 10), sf::Color::White));
-    pts.append(sf::Vertex(sf::Vector2f(wwidth / 2.f + n*(800 / zoomX), (wheight / 2.f) - 10), sf::Color::White));
-    pts.append(sf::Vertex(sf::Vector2f(wwidth / 2.f - n*(800 / zoomX), (wheight / 2.f) + 10), sf::Color::White));
-    pts.append(sf::Vertex(sf::Vector2f(wwidth / 2.f - n*(800 / zoomX), (wheight / 2.f) - 10), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f(wwidth / 2.f + n*(wwidth/2 / zoomX), (wheight / 2.f) + 10), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f(wwidth / 2.f + n*(wwidth/2 / zoomX), (wheight / 2.f) - 10), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f(wwidth / 2.f - n*(wwidth/2 / zoomX), (wheight / 2.f) + 10), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f(wwidth / 2.f - n*(wwidth/2 / zoomX), (wheight / 2.f) - 10), sf::Color::White));
 }
 void appendY_Nth(float n){
-    pts.append(sf::Vertex(sf::Vector2f((wwidth / 2.f) + 10, wheight / 2.f + n*(450 / zoomY)), sf::Color::White));
-    pts.append(sf::Vertex(sf::Vector2f((wwidth / 2.f) - 10, wheight / 2.f + n*(450 / zoomY)), sf::Color::White));
-    pts.append(sf::Vertex(sf::Vector2f((wwidth / 2.f) + 10, wheight / 2.f - n*(450 / zoomY)), sf::Color::White));
-    pts.append(sf::Vertex(sf::Vector2f((wwidth / 2.f) - 10, wheight / 2.f - n*(450 / zoomY)), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f((wwidth / 2.f) + 10, wheight / 2.f + n*(wheight/2 / zoomY)), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f((wwidth / 2.f) - 10, wheight / 2.f + n*(wheight/2 / zoomY)), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f((wwidth / 2.f) + 10, wheight / 2.f - n*(wheight/2 / zoomY)), sf::Color::White));
+    pts.append(sf::Vertex(sf::Vector2f((wwidth / 2.f) - 10, wheight / 2.f - n*(wheight/2 / zoomY)), sf::Color::White));
 }
 
 void redraw(){
@@ -90,6 +90,14 @@ void redraw(){
     for(float i = 1; i <= zoomY; i++){
         appendY_Nth(i);
     }
+    mouseAxis[0].position.x = wwidth/2;
+    mouseAxis[2].position.y = wheight/2;
+    axis[0].position.y = wheight/2;
+    axis[1].position.y = wheight/2;
+    axis[1].position.x = wwidth;
+    axis[2].position.x = wwidth/2;
+    axis[3].position.x = wwidth/2;
+    axis[3].position.y = wheight;
 }
 
 int main(int argc, char* argv[]){
@@ -98,7 +106,7 @@ int main(int argc, char* argv[]){
     //lua.script("sin = function(d) return math.sin(math.rad(d)) end");
     sf::Font font;
     if(!font.loadFromFile("font.ttf")){
-        std::cerr << "Could not load font 'arial.ttf'" << std::endl;
+        std::cerr << "Could not load font 'font.ttf'" << std::endl;
         exit(-2);
     }
     sf::RenderWindow window(sf::VideoMode(wwidth, wheight), "Plotter");
@@ -112,11 +120,10 @@ int main(int argc, char* argv[]){
     mouseAxis[2].position.y = wheight / 2;
     reload();
     redraw();
-    sf::VertexArray axis(sf::Lines, 4);
-    axis.append(sf::Vertex(sf::Vector2f(0, wheight/2), sf::Color::White));
-    axis.append(sf::Vertex(sf::Vector2f(wwidth, wheight / 2), sf::Color::White));
-    axis.append(sf::Vertex(sf::Vector2f(wwidth/2, 0), sf::Color::White));
-    axis.append(sf::Vertex(sf::Vector2f(wwidth/2, wheight), sf::Color::White));
+    axis[0] = sf::Vertex(sf::Vector2f(0, wheight/2), sf::Color::White);
+    axis[1] = sf::Vertex(sf::Vector2f(wwidth, wheight / 2), sf::Color::White);
+    axis[2] = sf::Vertex(sf::Vector2f(wwidth/2, 0), sf::Color::White);
+    axis[3] = sf::Vertex(sf::Vector2f(wwidth/2, wheight), sf::Color::White);
 
     while(window.isOpen()){
         sf::Event event;
@@ -153,6 +160,7 @@ int main(int argc, char* argv[]){
                 int mx = event.mouseMove.x, my = event.mouseMove.y;
                 mousePos.setPosition(mx+10, my-25);//TODO: Maybe not at the cursor but at some corner of the screen
                 std::stringstream str;
+		str.precision(3);
 		str << (mx - wwidth / 2)/wwidth*zoomX*2 << " " << (my - wheight / 2)/wheight*zoomY*-2;
 		mousePos.setString(str.str());
 		//mousePos.setString(std::format("{:.3} {:.3}", (mx - wwidth / 2)/wwidth*zoomX*2, (my - wheight / 2)/wheight*zoomY*-2));
@@ -162,7 +170,12 @@ int main(int argc, char* argv[]){
                 mouseAxis[2].position.x = mx;
                 mouseAxis[3].position.x = mx;
                 mouseAxis[3].position.y = my;
-            }
+            }else if(event.type == sf::Event::Resized){
+		window.setView(sf::View(sf::FloatRect(0,0,event.size.width,event.size.height)));
+		wwidth = event.size.width;
+		wheight = event.size.height;
+		redraw();
+	    }
         }
 
         window.clear(sf::Color::Black);
