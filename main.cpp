@@ -102,7 +102,7 @@ void redraw(){
 
 int main(int argc, char* argv[]){
     lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::math);
-    lua.script("sin,cos,tg,pi,pow = math.sin, math.cos, math.tan, math.pi, math.pow");
+    lua.script("sin,cos,tg,pi,pow,abs = math.sin, math.cos, math.tan, math.pi, math.pow, math.abs");
     //lua.script("sin = function(d) return math.sin(math.rad(d)) end");
     sf::Font font;
     if(!font.loadFromFile("font.ttf")){
@@ -160,10 +160,10 @@ int main(int argc, char* argv[]){
                 int mx = event.mouseMove.x, my = event.mouseMove.y;
                 mousePos.setPosition(mx+10, my-25);//TODO: Maybe not at the cursor but at some corner of the screen
                 std::stringstream str;
-		str.precision(3);
-		str << (mx - wwidth / 2)/wwidth*zoomX*2 << " " << (my - wheight / 2)/wheight*zoomY*-2;
-		mousePos.setString(str.str());
-		//mousePos.setString(std::format("{:.3} {:.3}", (mx - wwidth / 2)/wwidth*zoomX*2, (my - wheight / 2)/wheight*zoomY*-2));
+		        str.precision(3);
+		        str << (mx - wwidth / 2)/wwidth*zoomX*2 << " " << (my - wheight / 2)/wheight*zoomY*-2;
+		        mousePos.setString(str.str());
+		        //mousePos.setString(std::format("{:.3} {:.3}", (mx - wwidth / 2)/wwidth*zoomX*2, (my - wheight / 2)/wheight*zoomY*-2));
                 mouseAxis[0].position.y = my;
                 mouseAxis[1].position.y = my;
                 mouseAxis[1].position.x = mx;
