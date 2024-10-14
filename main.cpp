@@ -3,11 +3,13 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <fstream>
+#include <chrono>
 /*
 * TODO: show mouse intersections with curves
 */
 sol::state lua;
 std::vector<std::function<double(double)>> f;
+std::vector<std::function<double(double,double)>> f2;
 std::vector<sf::VertexArray> curve;
 sf::VertexArray pts(sf::Lines, 8*8);
 sf::VertexArray mouseAxis(sf::Lines, 4);
@@ -15,10 +17,10 @@ sf::VertexArray axis(sf::Lines, 4);
 sf::Text text;
 sf::Text mousePos;
 float wwidth = 1000, wheight = 600;
-size_t resolution = 200;//number of curve vertex points
+size_t resolution = 400;//number of curve vertex points
 float zoomY = 3.f;
 float zoomX = 6.f;
-int mx = 800, my = 450;
+int mx = 500, my = 300;
 
 double nullf(double x){ return x; }
 
@@ -29,11 +31,12 @@ void reload(){
     text.setString("");
 
     f.clear();
+    f2.clear();
     while(!(file.eof())){
         std::getline(file, func);
         if(func == "")continue;
         text.setString(text.getString() + func + "\n");
-        sol::protected_function_result pfr = lua.safe_script("return function(x) return " + func + " end", [](lua_State*, sol::protected_function_result pfr){
+        sol::protected_function_result pfr = lua.safe_script("return function(x,y) return " + func + " end", [](lua_State*, sol::protected_function_result pfr){
             sol::error err = pfr;
             text.setString(text.getString() + "\n" + "An error occurred: " + std::string(err.what()) + "\n");
             return pfr;
@@ -43,12 +46,20 @@ void reload(){
         sol::protected_function_result x = ((sol::protected_function) pfr)(0);
 
         if(!x.valid()){
-            sol::error err = x;
-            text.setString(text.getString() + "\n" + "An error occured: " + std::string(err.what()) + "\n");
+            sol::protected_function_result x2 = ((sol::protected_function) pfr)(0,0);
+            if(!x2.valid()){
+                sol::error err = x2;
+                text.setString(text.getString() + "\n" + "An error occured: " + std::string(err.what()) + "\n");
+            }else{
+                if(sol::type::number == x2.get_type()){
+                    f2.push_back(pfr);
+                }
+            }
         }else{
-            f.push_back(pfr);
+            if(sol::type::number == x.get_type()){
+                f.push_back(pfr);
+            }
         }
-
     }
     file.close();
 
@@ -83,6 +94,26 @@ void redraw(){
                 sf::Color::Green));
         }
     }
+    for(auto& fun : f2){
+        std::chrono::high_resolution_clock c;
+        std::chrono::time_point t = c.now();
+        sf::VertexArray ar = sf::VertexArray(sf::Points);
+        for(double i = 0; i <= resolution; i++){
+            for(double j = 0; j <= resolution; j++){
+                double x = (i / resolution - 0.5) * 2 * zoomX;
+                double y = (j / resolution - 0.5) * 2 * zoomY;
+                if(abs(fun(x, y))<0.001){
+                    ar.append(sf::Vertex(sf::Vector2f(
+                        (float) i / resolution * wwidth,
+                        wheight - (float) j / resolution * wheight),
+                        sf::Color::Red));
+                }
+            }
+        }
+        curve.push_back(ar);
+        std::chrono::time_point t2 = c.now();
+        text.setString(text.getString() + std::to_string((t2 - t).count()/1000000) + "\n");
+    }
     pts.clear();
     for(float i = 1; i <= zoomX; i++){
         appendX_Nth(i);
@@ -110,6 +141,7 @@ int main(int argc, char* argv[]){
         exit(-2);
     }
     sf::RenderWindow window(sf::VideoMode(wwidth, wheight), "Plotter");
+    window.setFramerateLimit(30);
     text = sf::Text("",font,20);
     text.setFillColor(sf::Color::White);
     text.setPosition(0,0);
@@ -171,11 +203,11 @@ int main(int argc, char* argv[]){
                 mouseAxis[3].position.x = mx;
                 mouseAxis[3].position.y = my;
             }else if(event.type == sf::Event::Resized){
-		window.setView(sf::View(sf::FloatRect(0,0,event.size.width,event.size.height)));
-		wwidth = event.size.width;
-		wheight = event.size.height;
-		redraw();
-	    }
+		        window.setView(sf::View(sf::FloatRect(0,0,event.size.width,event.size.height)));
+		        wwidth = event.size.width;
+		        wheight = event.size.height;
+		        redraw();
+	        }
         }
 
         window.clear(sf::Color::Black);

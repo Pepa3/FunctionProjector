@@ -1,2 +1,2 @@
-(math.abs(x)<1 and (x<0 and x+1 or x>=0 and 1-x) or 0)
--pow(x%1,2)+1
+x
+(y*y-x*x)*(x-1)*(2*x-3)-4*(x*x+y*y-2*x)*(x*x+y*y-2*x)
