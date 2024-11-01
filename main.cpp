@@ -17,7 +17,7 @@ sf::VertexArray axis(sf::Lines, 4);
 sf::Text text;
 sf::Text mousePos;
 float wwidth = 1000, wheight = 600;
-size_t resolution = 400;//number of curve vertex points
+size_t resolution = 1500;//number of curve vertex points
 float zoomY = 3.f;
 float zoomX = 6.f;
 int mx = 500, my = 300;
@@ -102,7 +102,7 @@ void redraw(){
             for(double j = 0; j <= resolution; j++){
                 double x = (i / resolution - 0.5) * 2 * zoomX;
                 double y = (j / resolution - 0.5) * 2 * zoomY;
-                if(abs(fun(x, y))<0.001){
+                if(abs(fun(x, y))<0.005){
                     ar.append(sf::Vertex(sf::Vector2f(
                         (float) i / resolution * wwidth,
                         wheight - (float) j / resolution * wheight),
@@ -112,7 +112,7 @@ void redraw(){
         }
         curve.push_back(ar);
         std::chrono::time_point t2 = c.now();
-        text.setString(text.getString() + std::to_string((t2 - t).count()/1000000) + "\n");
+        //text.setString(text.getString() + std::to_string((t2 - t).count()/1000000) + "\n");
     }
     pts.clear();
     for(float i = 1; i <= zoomX; i++){
@@ -156,7 +156,8 @@ int main(int argc, char* argv[]){
     axis[1] = sf::Vertex(sf::Vector2f(wwidth, wheight / 2), sf::Color::White);
     axis[2] = sf::Vertex(sf::Vector2f(wwidth/2, 0), sf::Color::White);
     axis[3] = sf::Vertex(sf::Vector2f(wwidth/2, wheight), sf::Color::White);
-
+    int screen = -1;
+    size_t r;
     while(window.isOpen()){
         sf::Event event;
         while(window.pollEvent(event)){
@@ -187,6 +188,11 @@ int main(int argc, char* argv[]){
                     redraw();
                 } else if(key == sf::Keyboard::Q){
                     window.close();
+                } else if(key == sf::Keyboard::Space){
+                    r = resolution;
+                    resolution = 8000;
+                    redraw();
+                    screen = 2;
                 }
             }else if(event.type == sf::Event::MouseMoved){
                 int mx = event.mouseMove.x, my = event.mouseMove.y;
@@ -220,6 +226,18 @@ int main(int argc, char* argv[]){
         window.draw(mouseAxis);
         window.draw(mousePos);
         window.display();
+        if(screen == 0){
+            screen = -1;
+            sf::Vector2u windowSize = window.getSize();
+            sf::Texture texture;
+            texture.create(windowSize.x, windowSize.y);
+            texture.update(window);
+            sf::Image screenshot = texture.copyToImage();
+            screenshot.saveToFile("screen.png");
+            resolution = r;
+            redraw();
+            std::cout << "Saved to screen.png";
+        } else if(screen > 0){ screen--; }
     }
 
     return 0;
